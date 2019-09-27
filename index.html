@@ -61,5 +61,31 @@ function MyNew() {
  * 3. 由构造函数返回的对象就是 new 表达式的结果。如果构造函数没有显式返回一个对象，则使用步骤1创建的对象。（一般情况下，构造函数不返回值，但是用户可以选择主动返回对象，来覆盖正常的对象创建步骤）
  */
 </script>
+
+<script>
+// 运算符优先级 https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
+/**
+ * 20 圆括号 ()
+ * 19 成员访问 .
+ *    需计算的成员访问 []
+ *    new (带参数列表)
+ *    函数调用
+ * 18 new (无参数列表)
+ */
+function Foo() {
+  return this;
+}
+Foo.getName = function(a) {
+  console.log('1', a);
+}
+Foo.prototype.getName = function(a) {
+  console.log('2', a);
+}
+new Foo.getName;            // 1 undefined  |  new (Foo.getName)
+new Foo.getName();          // 1 undefined  |  new (Foo.getName)()
+new Foo.getName('hello');   // 1 hello
+new Foo().getName();        // 2 undefined  |  (new Foo()).getName()
+new Foo().getName('world'); // 2 world      |  (new Foo()).getName()
+</script>
 </body>
 </html>
