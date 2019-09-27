@@ -7,6 +7,8 @@
   <title>new</title>
 </head>
 <body>
+<a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/new" target="_blank">MDN new</a>
+
 <script>
   function Super1(age) {
     this.age = age;
@@ -42,50 +44,83 @@
   console.log('---------------------')
 </script>
 
-<a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/new" target="_blank">MDN new</a>
 <script>
-// 1. 创建一个空对象 创建一个空的简单JavaScript对象（即{}）；
-// 2. 空对象的原型指向构造函数的原型 链接该对象（即设置该对象的构造函数）到另一个对象；
-// 3. this 执行上下文 将步骤1新创建的对象作为this的上下文；
-// 4. 如果该函数没有返回对象，则返回this。
-function MyNew() {
-  var obj = {}
-  obj.__proto__ = Object.create(MyNew)
+  // 运算符优先级 https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
+  /**
+  * 20 圆括号 ()
+  * 19 成员访问 .
+  *    需计算的成员访问 []
+  *    new (带参数列表)
+  *    函数调用
+  * 18 new (无参数列表)
+  */
+  function Foo() {
+    return this;
+  }
+  Foo.getName = function(a) {
+    console.log('1', a);
+  }
+  Foo.prototype.getName = function(a) {
+    console.log('2', a);
+  }
+  new Foo.getName;            // 1 undefined  |  new (Foo.getName)
+  new Foo.getName();          // 1 undefined  |  new (Foo.getName)()
+  new Foo.getName('hello');   // 1 hello
+  new Foo().getName();        // 2 undefined  |  (new Foo()).getName()
+  new Foo().getName('world'); // 2 world      |  (new Foo()).getName()
 
-  return obj
-}
-/**
- * 当代码 new Foo(...) 执行时，会发生以下事情：
- * 1. 一个继承自 Foo.prototype 的新对象被创建。
- * 2. 使用指定的参数调用构造函数 Foo，并将 this 绑定到新创建的对象。new Foo 等同于 new Foo()，也就是没有指定参数列表，Foo 不带任何参数调用的情况。
- * 3. 由构造函数返回的对象就是 new 表达式的结果。如果构造函数没有显式返回一个对象，则使用步骤1创建的对象。（一般情况下，构造函数不返回值，但是用户可以选择主动返回对象，来覆盖正常的对象创建步骤）
- */
+  console.log('---------------------')
 </script>
 
 <script>
-// 运算符优先级 https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
-/**
- * 20 圆括号 ()
- * 19 成员访问 .
- *    需计算的成员访问 []
- *    new (带参数列表)
- *    函数调用
- * 18 new (无参数列表)
- */
-function Foo() {
-  return this;
-}
-Foo.getName = function(a) {
-  console.log('1', a);
-}
-Foo.prototype.getName = function(a) {
-  console.log('2', a);
-}
-new Foo.getName;            // 1 undefined  |  new (Foo.getName)
-new Foo.getName();          // 1 undefined  |  new (Foo.getName)()
-new Foo.getName('hello');   // 1 hello
-new Foo().getName();        // 2 undefined  |  (new Foo()).getName()
-new Foo().getName('world'); // 2 world      |  (new Foo()).getName()
+  /**
+   * 1. 创建一个空对象 创建一个空的简单JavaScript对象（即{}）；
+   * 2. 空对象的原型指向构造函数的原型 链接该对象（即设置该对象的构造函数）到另一个对象；
+   * 3. 将步骤1新创建的对象作为this的上下文；
+   * 4. 如果该函数没有返回对象，则返回this。
+   */
+
+  /**
+    * 当代码 new Foo(...) 执行时，会发生以下事情：
+    * 1. 一个继承自 Foo.prototype 的新对象被创建。
+    * 2. 使用指定的参数调用构造函数 Foo，并将 this 绑定到新创建的对象。new Foo 等同于 new Foo()，也就是没有指定参数列表，Foo 不带任何参数调用的情况。
+    * 3. 由构造函数返回的对象就是 new 表达式的结果。如果构造函数没有显式返回一个对象，则使用步骤1创建的对象。（一般情况下，构造函数不返回值，但是用户可以选择主动返回对象，来覆盖正常的对象创建步骤）
+    */
+  function MyNew1() {
+    // var obj = Object.create(null) // 注意: 创建的是一个没有原型链链接的空对象，所以原型上的属性无法继承
+    var obj = {} // 通过对象字面量或new Object()创建的是有原型链链接的空对象
+    var Constructor = [].shift.call(arguments) // 取出第一个参数，就是我们要传入的构造函数。此外因为 shift 会修改原数组，所以 arguments 会被去除第一个参数
+    obj.__proto__ = Constructor.prototype // 将 obj 的原型指向构造函数，这样 obj 就可以访问到构造函数原型中的属性
+    var res = Constructor.apply(obj, arguments) // 使用 apply，改变构造函数 this 的指向到新建的对象，这样 obj 就可以访问到构造函数中的属性
+    return (res && typeof res === 'object') ? res : obj
+  }
+  function MyNew2(Constructor, ...rest) {
+    const obj = Object.create(Constructor.prototype)
+    const res = Constructor.apply(obj, rest)
+    return (res && typeof res === 'object') ? res : obj
+  }
+
+  function test(name, age) {
+    this.name = name
+    this.age = age
+    this.sleep = 'hello'
+
+    // return 'string' // 返回一个基本类型 或不返回
+    // return { width: '100', height: 200 } // 返回一个对象
+  }
+  test.prototype.run = 'world'
+  test.prototype.say = function() {
+    return `I'm ${this.name} ${this.run}`
+  }
+  var testInstance = MyNew1(test, 'zys', 27)
+  console.log(testInstance)
+  console.log(testInstance.name)
+  console.log(testInstance.age)
+  console.log(testInstance.sleep)
+  console.log(testInstance.run)
+  console.log(testInstance.say())
+
+  console.log('---------------------')
 </script>
 </body>
 </html>
